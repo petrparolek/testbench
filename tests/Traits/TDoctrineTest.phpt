@@ -2,7 +2,6 @@
 
 namespace Tests\Traits;
 
-use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Tester\Assert;
 
 require __DIR__ . '/../bootstrap.php';
@@ -35,39 +34,8 @@ class TDoctrineTest extends \Tester\TestCase
 	{
 		/** @var \Testbench\Mocks\DoctrineConnectionMock $connection */
 		$connection = $this->getEntityManager()->getConnection();
-		if ($connection->getDatabasePlatform() instanceof MySqlPlatform) {
-			Assert::match('testbench_initial', $connection->getDatabase());
-			Assert::match('db_tests_' . getmypid(), $connection->query('SELECT DATABASE();')->fetchColumn());
-		} else {
-			Assert::same('db_tests_' . getmypid(), $connection->getDatabase());
-		}
-	}
-
-	public function testDatabaseSqls()
-	{
-		/** @var \Testbench\Mocks\DoctrineConnectionMock $connection */
-		$connection = $this->getEntityManager()->getConnection();
-		$result = $connection->query('SELECT * FROM table_1')->fetchAll();
-		if ($connection->getDatabasePlatform() instanceof MySqlPlatform) {
-			Assert::same([
-				['id' => '1', 'column_1' => 'value_1', 'column_2' => 'value_2'],
-				['id' => '2', 'column_1' => 'value_1', 'column_2' => 'value_2'],
-				['id' => '3', 'column_1' => 'value_1', 'column_2' => 'value_2'],
-				[
-					'id' => '4',
-					'column_1' => 'from_migration_1',
-					'column_2' => 'from_migration_2',
-				],
-			], $result);
-			Assert::match('testbench_initial', $connection->getDatabase());
-		} else {
-			Assert::same([
-				['id' => 1, 'column_1' => 'value_1', 'column_2' => 'value_2'],
-				['id' => 2, 'column_1' => 'value_1', 'column_2' => 'value_2'],
-				['id' => 3, 'column_1' => 'value_1', 'column_2' => 'value_2'],
-			], $result);
-			Assert::same('db_tests_' . getmypid(), $connection->getDatabase());
-		}
+		Assert::match('testbench_initial', $connection->getDatabase());
+		Assert::truthy(preg_match('~testbench_[1-8]~', $connection->query('SELECT DATABASE();')->fetchColumn()));
 	}
 
 	public function testDatabaseConnectionReplacementInApp()
@@ -76,6 +44,19 @@ class TDoctrineTest extends \Tester\TestCase
 		$em = $this->getService(\Kdyby\Doctrine\EntityManager::class);
 		new \DoctrineComponentWithDatabaseAccess($em); //tests inside
 		//app is not using onConnect from Testbench but it has to connect to the mock database
+	}
+
+	public function testImplicitCommit()
+	{
+		/** @var \Testbench\Mocks\DoctrineConnectionMock $connection */
+		$connection = $this->getEntityManager()->getConnection();
+		Assert::exception(
+			function () use ($connection) {
+				$connection->query(' TRUNCATE TABLE table_1');
+			},
+			\LogicException::class,
+			'Cannot run query "TRUNCATE TABLE table_1" because it would cause implicit commit. This is not supported in Testbench because it uses transactional isolation.'
+		);
 	}
 
 }

@@ -11,6 +11,6 @@ interface IDatabaseProvider
 
 	function __testbench_database_create($connection, \Nette\DI\Container $container);
 
-	function __testbench_database_connect($connection, \Nette\DI\Container $container, $databaseName = NULL);
+//	function __testbench_database_connect($connection, \Nette\DI\Container $container, $databaseName = NULL);
 
 }

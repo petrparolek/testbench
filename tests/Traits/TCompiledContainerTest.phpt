@@ -47,6 +47,7 @@ class TCompiledContainerTest extends \Tester\TestCase
 			'test' => ['xxx' => ['yyy']],
 		]);
 		Assert::same(['xxx' => ['yyy']], $refreshedContainer->parameters['test']);
+		/** @var \Testbench\FakeExtension $extension */
 		Assert::type('Testbench\FakeExtension', $extension = $refreshedContainer->getService('test'));
 		Assert::true($extension::$tested);
 

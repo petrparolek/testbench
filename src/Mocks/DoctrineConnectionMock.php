@@ -4,14 +4,44 @@ namespace Testbench\Mocks;
 
 use Doctrine\Common;
 use Doctrine\DBAL;
-use Doctrine\DBAL\Platforms\MySqlPlatform;
-use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
 
 /**
  * @method onConnect(DoctrineConnectionMock $self)
  */
 class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Testbench\Providers\IDatabaseProvider
 {
+
+	/**
+	 * @internal
+	 * @see https://dev.mysql.com/doc/refman/5.7/en/implicit-commit.html
+	 */
+	const IMPLICIT_COMMIT_PHRASES = [
+		'ALTER',
+		'CREATE',
+		'DROP',
+		'INSTALL',
+		'RENAME',
+		'TRUNCATE',
+		'UNINSTALL',
+		'GRANT',
+		'REVOKE',
+		'SET[\s]+PASSWORD',
+		'LOCK',
+		'UNLOCK',
+		'LOAD',
+		'ANALYZE',
+		'CACHE',
+		'CHECK',
+		'FLUSH',
+		'OPTIMIZE',
+		'REPAIR',
+		'RESET',
+		'START',
+		'STOP',
+		'CHANGE',
+	];
+
+	private $__testbench_allowImplicitCommit = FALSE;
 
 	private $__testbench_databaseName;
 
@@ -32,11 +62,34 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 	) {
 		$container = \Testbench\ContainerFactory::create(FALSE);
 		$this->onConnect[] = function (DoctrineConnectionMock $connection) use ($container) {
-			if ($this->__testbench_databaseName !== NULL) { //already initialized (needed for pgsql)
-				return;
+			if (!$connection->getDatabasePlatform() instanceof DBAL\Platforms\MySqlPlatform) {
+				throw new \Nette\NotSupportedException('Platform ' . $connection->getDatabasePlatform()->getName() . ' is not supported.');
 			}
+
 			try {
-				$this->__testbench_database_setup($connection, $container);
+				$dataFile = 'nette.safe://' . \Testbench\Bootstrap::$tempDir . '/../databases.testbench';
+				if (file_exists($dataFile)) {
+					$data = file_get_contents($dataFile);
+				} else {
+					$data = '';
+				}
+
+				$dbName = $container->parameters['testbench']['prefix'] . getenv(\Tester\Environment::THREAD);
+				$this->__testbench_databaseName = $dbName;
+
+				$this->__testbench_allowImplicitCommit = TRUE;
+				if (!preg_match('~' . $dbName . '~', $data)) { //database doesn't exist in log file
+					$handle = fopen($dataFile, 'a+');
+					fwrite($handle, $dbName . "\n");
+					fclose($handle);
+
+					$this->__testbench_database_setup($connection, $container);
+				} else { //database already exists in log file
+					$this->__testbench_switch_database($connection, $container);
+				}
+				$this->__testbench_allowImplicitCommit = FALSE;
+
+				$connection->beginTransaction();
 			} catch (\Exception $e) {
 				\Tester\Assert::fail($e->getMessage());
 			}
@@ -44,13 +97,23 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 		parent::__construct($params, $driver, $config, $eventManager);
 	}
 
-	/** @internal */
+	/**
+	 * @internal
+	 *
+	 * @param DoctrineConnectionMock $connection
+	 */
 	public function __testbench_database_setup($connection, \Nette\DI\Container $container)
 	{
-		$this->__testbench_databaseName = 'db_tests_' . getmypid();
-
-		$this->__testbench_database_drop($connection, $container);
-		$this->__testbench_database_create($connection, $container);
+		try {
+			$this->__testbench_database_create($connection, $container);
+		} catch (\Doctrine\DBAL\Exception\DriverException $exc) {
+			if ($exc->getErrorCode() === 1007) { //ER_DB_CREATE_EXISTS (delete and create new one)
+				$this->__testbench_database_drop($connection, $container);
+				$this->__testbench_database_create($connection, $container);
+			} else {
+				throw $exc;
+			}
+		}
 
 		$config = $container->parameters['testbench'];
 
@@ -70,10 +133,24 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 				$migration->migrate($migrationsConfig->getLatestVersion());
 			}
 		}
+	}
 
-		register_shutdown_function(function () use ($connection, $container) {
-			$this->__testbench_database_drop($connection, $container);
-		});
+	/**
+	 * @internal
+	 *
+	 * @param \Kdyby\Doctrine\Connection $connection
+	 */
+	public function __testbench_switch_database($connection, \Nette\DI\Container $container)
+	{
+		try {
+			$connection->exec("USE {$this->__testbench_databaseName}");
+		} catch (\Doctrine\DBAL\Exception\DriverException $exc) {
+			if ($exc->getErrorCode() === 1049) { //ER_BAD_DB_ERROR (database doesn't exist but it should)
+				$this->__testbench_database_setup($connection, $container);
+			} else {
+				throw $exc;
+			}
+		}
 	}
 
 	/**
@@ -84,11 +161,7 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 	public function __testbench_database_create($connection, \Nette\DI\Container $container)
 	{
 		$connection->exec("CREATE DATABASE {$this->__testbench_databaseName}");
-		if ($connection->getDatabasePlatform() instanceof MySqlPlatform) {
-			$connection->exec("USE {$this->__testbench_databaseName}");
-		} else {
-			$this->__testbench_database_connect($connection, $container, $this->__testbench_databaseName);
-		}
+		$this->__testbench_switch_database($connection, $container);
 	}
 
 	/**
@@ -98,39 +171,53 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 	 */
 	public function __testbench_database_drop($connection, \Nette\DI\Container $container)
 	{
-		if (!$connection->getDatabasePlatform() instanceof MySqlPlatform) {
-			$this->__testbench_database_connect($connection, $container);
-		}
 		$connection->exec("DROP DATABASE IF EXISTS {$this->__testbench_databaseName}");
 	}
 
 	/**
-	 * @internal
-	 *
-	 * @param $connection \Kdyby\Doctrine\Connection
+	 * @inheritdoc
 	 */
-	public function __testbench_database_connect($connection, \Nette\DI\Container $container, $databaseName = NULL)
+	public function exec($statement)
 	{
-		//connect to an existing database other than $this->_databaseName
-		if ($databaseName === NULL) {
-			$config = $container->parameters['testbench'];
-			if (isset($config['dbname'])) {
-				$databaseName = $config['dbname'];
-			} elseif ($connection->getDatabasePlatform() instanceof PostgreSqlPlatform) {
-				$databaseName = 'postgres';
-			} else {
-				throw new \LogicException('You should setup existing database name using testbench:dbname option.');
-			}
-		}
+		$this->validateQuery($statement);
+		return parent::exec($statement);
+	}
 
-		$connection->close();
-		$connection->__construct(
-			['dbname' => $databaseName] + $connection->getParams(),
-			$connection->getDriver(),
-			$connection->getConfiguration(),
-			$connection->getEventManager()
-		);
-		$connection->connect();
+	/**
+	 * @inheritdoc
+	 */
+	public function query()
+	{
+		$args = func_get_args();
+		$this->validateQuery($args[0]);
+		return parent::query(...$args);
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function prepare($statement)
+	{
+		$this->validateQuery($statement);
+		return parent::prepare($statement);
+	}
+
+	/**
+	 * @param string $sql
+	 */
+	private function validateQuery($sql)
+	{
+		if ($this->__testbench_allowImplicitCommit === TRUE) {
+			return;
+		}
+		$pattern = sprintf('~^[\s]*(%s)~i', implode('|', self::IMPLICIT_COMMIT_PHRASES));
+		if (preg_match($pattern, $sql) > 0) {
+			$message = sprintf(
+				'Cannot run query "%s" because it would cause implicit commit. This is not supported in Testbench because it uses transactional isolation.',
+				trim($sql)
+			);
+			throw new \LogicException($message);
+		}
 	}
 
 }

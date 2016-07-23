@@ -12,6 +12,9 @@ class TestbenchExtension extends \Nette\DI\CompilerExtension
 		if (!isset($testbenchConfig['url'])) {
 			$testbenchConfig['url'] = 'http://test.bench/';
 		}
+		if (!isset($testbenchConfig['prefix'])) {
+			$testbenchConfig['prefix'] = '_testbench_';
+		}
 		$builder->parameters[$this->name] = $testbenchConfig;
 
 		$this->prepareDoctrine();
