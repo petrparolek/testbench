@@ -126,7 +126,7 @@ trait TPresenter
 			$html = (string)$response->getSource();
 			//DOMDocument doesn't handle HTML tags inside of script tags very well
 			$html = preg_replace('~<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>~', '', $html); //http://stackoverflow.com/a/6660315/3135248
-			$dom = static::fromHtml($html);
+			$dom = @static::fromHtml($html);
 			Assert::true($dom->has('html'), "missing 'html' tag");
 			Assert::true($dom->has('title'), "missing 'title' tag");
 			Assert::true($dom->has('body'), "missing 'body' tag");
