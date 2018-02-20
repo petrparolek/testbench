@@ -6,12 +6,15 @@ use Doctrine\Common;
 use Doctrine\DBAL;
 use Doctrine\DBAL\Platforms\MySqlPlatform;
 use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
+use Nette\SmartObject;
 
 /**
  * @method onConnect(DoctrineConnectionMock $self)
  */
 class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Testbench\Providers\IDatabaseProvider
 {
+
+	use SmartObject;
 
 	private $__testbench_databaseName;
 
