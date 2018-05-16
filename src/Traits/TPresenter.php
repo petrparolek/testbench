@@ -41,6 +41,10 @@ trait TPresenter
 		$this->__testbench_presenter = $presenterFactory->createPresenter($presenter);
 		$this->__testbench_presenter->autoCanonicalize = FALSE;
 		$this->__testbench_presenter->invalidLinkMode = \Nette\Application\UI\Presenter::INVALID_LINK_EXCEPTION;
+		if ($container->hasService('fakePresenter')) {
+			$container->removeService('fakePresenter');
+		}
+		$container->addService('fakePresenter', $this->__testbench_presenter);
 
 		$postCopy = $post;
 		if (isset($params['do'])) {
