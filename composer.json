@@ -14,7 +14,7 @@
     }
   ],
   "require": {
-    "php": ">=5.6.0",
+    "php": ">=7.1.0",
     "kdyby/fake-session": "^2.0",
     "nette/application": "^2.4 || ^v3.0",
     "nette/bootstrap": "^2.4 || ^v3.0",
@@ -34,7 +34,7 @@
     "kdyby/doctrine-dbal-batchimport": "dev-master",
     "kdyby/events": "^3.0",
     "nette/database": "^2.4 || ^v3.0",
-    "zenify/doctrine-migrations": "^2.3"
+    "nettrine/migrations": "^0.3.0"
   },
   "autoload": {
     "psr-4": {
@@ -59,6 +59,6 @@
     "kdyby/doctrine": "Allows enhanced database tests using Doctrine",
     "kdyby/doctrine-dbal-batchimport": "Allows SQL scripts import for Doctrine (required with kdyby/doctrine)",
     "nette/database": "Allows enhanced database tests using Nette\\Database",
-    "zenify/doctrine-migrations": "Migrate database to the fresh state"
+    "nettrine/migrations": "Migrate database to the fresh state"
   }
 }
