@@ -16,12 +16,10 @@ doctrine:
 
 
 extensions:
-	migrations: Zenify\DoctrineMigrations\DI\MigrationsExtension
-	- Symnedi\EventDispatcher\DI\EventDispatcherExtension #migrations
-
+	migrations: Nettrine\Migrations\DI\MigrationsExtension
 
 migrations:
-	directory: %appDir%/../Migrations
+	directory: %testsDir%/_helpers/Migrations
 	namespace: Testbench\Migrations
 
 
