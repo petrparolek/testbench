@@ -2,6 +2,8 @@
 
 namespace Testbench;
 
+use Kdyby\Doctrine\EntityManager;
+
 trait TCompiledContainer
 {
 
@@ -18,7 +20,15 @@ trait TCompiledContainer
 
 	protected function refreshContainer($config = [])
 	{
-		return \Testbench\ContainerFactory::create(TRUE, $config);
+		$container = \Testbench\ContainerFactory::create(TRUE, $config);
+
+		if ($this instanceof TransactionalTestCase) {
+			/** @var EntityManager $em */
+			$em = $this->getService(EntityManager::class);
+			$em->getConnection()->beginTransaction();
+		}
+
+		return $container;
 	}
 
 	protected function changeRunLevel($testSpeed = \Testbench::FINE)
