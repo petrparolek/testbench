@@ -14,7 +14,7 @@
     }
   ],
   "require": {
-    "php": ">=7.1.0",
+    "php": ">=7.0.0",
     "kdyby/fake-session": "^2.0",
     "nette/application": "^2.4 || ^v3.0",
     "nette/bootstrap": "^2.4 || ^v3.0",
@@ -34,7 +34,7 @@
     "kdyby/doctrine-dbal-batchimport": "dev-master",
     "kdyby/events": "^3.0",
     "nette/database": "^2.4 || ^v3.0",
-    "nettrine/migrations": "^0.3.0",
+    "nettrine/migrations": "^0.2",
     "nextras/migrations": "dev-master"
   },
   "autoload": {
