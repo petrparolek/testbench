@@ -44,14 +44,29 @@ class TestbenchExtension extends \Nette\DI\CompilerExtension
 	private function prepareDoctrine()
 	{
 		$doctrineConnectionSectionKeys = ['dbname' => NULL, 'driver' => NULL, 'connection' => NULL];
-		/** @var \Nette\DI\CompilerExtension $extension */
-		foreach ($this->compiler->getExtensions('Kdyby\Doctrine\DI\OrmExtension') as $extension) {
-			if (array_intersect_key($extension->config, $doctrineConnectionSectionKeys)) {
-				$extension->config['wrapperClass'] = Mocks\Kdyby\DoctrineConnectionMock::class;
-			} else {
-				foreach ($extension->config as $sectionName => $sectionConfig) {
-					if (is_array($sectionConfig) && array_intersect_key($sectionConfig, $doctrineConnectionSectionKeys)) {
-						$extension->config[$sectionName]['wrapperClass'] = 'Testbench\Mocks\DoctrineConnectionMock';
+		if (class_exists('Kdyby\Doctrine\DI\OrmExtension')) {
+			/** @var \Nette\DI\CompilerExtension $extension */
+			foreach ($this->compiler->getExtensions('Kdyby\Doctrine\DI\OrmExtension') as $extension) {
+				if (array_intersect_key($extension->config, $doctrineConnectionSectionKeys)) {
+					$extension->config['wrapperClass'] = Mocks\Kdyby\DoctrineConnectionMock::class;
+				} else {
+					foreach ($extension->config as $sectionName => $sectionConfig) {
+						if (is_array($sectionConfig) && array_intersect_key($sectionConfig, $doctrineConnectionSectionKeys)) {
+							$extension->config[$sectionName]['wrapperClass'] = 'Testbench\Mocks\DoctrineConnectionMock';
+						}
+					}
+				}
+			}
+		} elseif (class_exists(\Nettrine\DBAL\DI\DbalConsoleExtension::class)) {
+			/** @var \Nette\DI\CompilerExtension $extension */
+			foreach ($this->compiler->getExtensions(\Nettrine\DBAL\DI\DbalExtension::class) as $extension) {
+				if (array_intersect_key($extension->config, $doctrineConnectionSectionKeys)) {
+					$extension->config['connection']['wrapperClass'] = Mocks\Nettrine\DoctrineConnectionMock::class;
+				} else {
+					foreach ($extension->config as $sectionName => $sectionConfig) {
+						if (is_array($sectionConfig) && array_intersect_key($sectionConfig, $doctrineConnectionSectionKeys)) {
+							$extension->config[$sectionName]['connection']['wrapperClass'] = Mocks\Nettrine\DoctrineConnectionMock::class;
+						}
 					}
 				}
 			}

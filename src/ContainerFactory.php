@@ -32,6 +32,8 @@ class ContainerFactory
 				self::registerAdditionalExtension($compiler, 'fakeSession', new \Kdyby\FakeSession\DI\FakeSessionExtension);
 				if (class_exists('Kdyby\Console\DI\ConsoleExtension')) {
 					self::registerAdditionalExtension($compiler, 'console', new \Kdyby\Console\DI\ConsoleExtension);
+				} elseif (class_exists(\Contributte\Console\DI\ConsoleExtension::class)) {
+					self::registerAdditionalExtension($compiler, 'console', new \Contributte\Console\DI\ConsoleExtension(true));
 				}
 			};
 
@@ -54,6 +56,7 @@ class ContainerFactory
 	{
 		$extensions = [];
 		$config = $compiler->getConfig();
+
 		foreach (isset($config['extensions']) ? $config['extensions'] : [] as $extension) {
 			if (is_string($extension)) {
 				$extensions[] = $extension;

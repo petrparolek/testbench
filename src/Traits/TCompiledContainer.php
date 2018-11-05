@@ -2,8 +2,6 @@
 
 namespace Testbench;
 
-use Kdyby\Doctrine\EntityManager;
-
 trait TCompiledContainer
 {
 
@@ -23,8 +21,14 @@ trait TCompiledContainer
 		$container = \Testbench\ContainerFactory::create(TRUE, $config);
 
 		if ($this instanceof TransactionalTestCase) {
-			/** @var EntityManager $em */
-			$em = $this->getService(EntityManager::class);
+			if (class_exists(\Kdyby\Doctrine\EntityManager)) {
+				/** @var \Kdyby\Doctrine\EntityManager $em */
+				$em = $this->getService(\Kdyby\Doctrine\EntityManager::class);
+			} elseif (\Nettrine\ORM\EntityManager::class) {
+				/** @var \Nettrine\ORM\EntityManager $em */
+				$em = $this->getService(\Nettrine\ORM\EntityManager::class);
+			}
+
 			$em->getConnection()->beginTransaction();
 		}
 
@@ -33,9 +37,9 @@ trait TCompiledContainer
 
 	protected function changeRunLevel($testSpeed = \Testbench::FINE)
 	{
-		if ((int)getenv('RUNLEVEL') < $testSpeed) {
+		if ((int) getenv('RUNLEVEL') < $testSpeed) {
 			\Tester\Environment::skip(
-				"Required runlevel '$testSpeed' but current runlevel is '" . (int)getenv('RUNLEVEL') . "' (higher runlevel means slower tests)\n" .
+				"Required runlevel '$testSpeed' but current runlevel is '" . (int) getenv('RUNLEVEL') . "' (higher runlevel means slower tests)\n" .
 				"You can run this test with environment variable: 'RUNLEVEL=$testSpeed vendor/bin/run-tests ...'\n"
 			);
 		}
@@ -50,5 +54,4 @@ trait TCompiledContainer
 	{
 		$this->changeRunLevel($really ? \Testbench::SLOW : \Testbench::QUICK);
 	}
-
 }
