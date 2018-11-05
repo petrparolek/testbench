@@ -11,8 +11,8 @@ class Testbench
 
 if (class_exists('Kdyby\Doctrine\Connection')) { //BC:
 	class_alias('Testbench\Mocks\ApplicationRequestMock', 'Testbench\ApplicationRequestMock');
-	class_alias('Testbench\Mocks\DoctrineConnectionMock', 'Testbench\ConnectionMock');
-	class_alias('Testbench\Mocks\DoctrineConnectionMock', 'Testbench\Mocks\ConnectionMock');
+	class_alias('Testbench\Mocks\Kdyby\DoctrineConnectionMock', 'Testbench\ConnectionMock');
+	class_alias('Testbench\Mocks\Kdyby\DoctrineConnectionMock', 'Testbench\Mocks\ConnectionMock');
 	class_alias('Testbench\Mocks\ControlMock', 'Testbench\ControlMock');
 	class_alias('Testbench\Mocks\HttpRequestMock', 'Testbench\HttpRequestMock');
 	class_alias('Testbench\Mocks\PresenterMock', 'Testbench\PresenterMock');

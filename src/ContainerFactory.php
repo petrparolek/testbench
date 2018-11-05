@@ -7,6 +7,7 @@ namespace Testbench;
  */
 class ContainerFactory
 {
+
 	use \Nette\SmartObject;
 
 	private static $container;
@@ -74,5 +75,4 @@ class ContainerFactory
 	{
 		throw new \Exception('Unserialization is not allowed');
 	}
-
 }

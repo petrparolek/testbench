@@ -6,12 +6,12 @@ class TestbenchExtension extends \Nette\DI\CompilerExtension
 {
 
 	private $defaults = [
-		'dbname' => NULL,               // custom initial test database name (should not be needed)
-		'dbprefix' => '_testbench_',    // database prefix for created tests databases
-		'migrations' => FALSE,          // set TRUE if you want to use Doctrine migrations
-		'shareDatabase' => FALSE,       // should Testbench always create new databases (FALSE) or use shared databases (TRUE)
-		'sqls' => [],                   // sqls you want to import during new test database creation
-		'url' => 'http://test.bench/',  // fake URL for HTTP request mock
+		'dbname' => NULL, // custom initial test database name (should not be needed)
+		'dbprefix' => '_testbench_', // database prefix for created tests databases
+		'migrations' => FALSE, // set TRUE if you want to use Doctrine migrations
+		'shareDatabase' => FALSE, // should Testbench always create new databases (FALSE) or use shared databases (TRUE)
+		'sqls' => [], // sqls you want to import during new test database creation
+		'url' => 'http://test.bench/', // fake URL for HTTP request mock
 	];
 
 	public function loadConfiguration()
@@ -47,7 +47,7 @@ class TestbenchExtension extends \Nette\DI\CompilerExtension
 		/** @var \Nette\DI\CompilerExtension $extension */
 		foreach ($this->compiler->getExtensions('Kdyby\Doctrine\DI\OrmExtension') as $extension) {
 			if (array_intersect_key($extension->config, $doctrineConnectionSectionKeys)) {
-				$extension->config['wrapperClass'] = 'Testbench\Mocks\DoctrineConnectionMock';
+				$extension->config['wrapperClass'] = Mocks\Kdyby\DoctrineConnectionMock::class;
 			} else {
 				foreach ($extension->config as $sectionName => $sectionConfig) {
 					if (is_array($sectionConfig) && array_intersect_key($sectionConfig, $doctrineConnectionSectionKeys)) {
@@ -72,7 +72,7 @@ class TestbenchExtension extends \Nette\DI\CompilerExtension
 						$extensionConfig['user'],
 						$extensionConfig['password'],
 						isset($extensionConfig['options']) ? ($extensionConfig['options'] + ['lazy' => TRUE]) : [],
-					]);
+				]);
 			} else {
 				foreach ($extension->config as $sectionName => $sectionConfig) {
 					$definitionName = $extension->name . '.' . $sectionName . '.connection';
@@ -82,10 +82,9 @@ class TestbenchExtension extends \Nette\DI\CompilerExtension
 							$sectionConfig['user'],
 							$sectionConfig['password'],
 							isset($sectionConfig['options']) ? ($sectionConfig['options'] + ['lazy' => TRUE]) : [],
-						]);
+					]);
 				}
 			}
 		}
 	}
-
 }

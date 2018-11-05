@@ -1,6 +1,6 @@
 <?php
 
-namespace Testbench\Mocks;
+namespace Testbench\Mocks\Kdyby;
 
 use Doctrine\Common;
 use Doctrine\DBAL;
@@ -17,7 +17,6 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 	use SmartObject;
 
 	private $__testbench_databaseName;
-
 	public $onConnect = [];
 
 	public function connect()
@@ -32,7 +31,8 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 		DBAL\Driver $driver,
 		DBAL\Configuration $config = NULL,
 		Common\EventManager $eventManager = NULL
-	) {
+	)
+	{
 		$container = \Testbench\ContainerFactory::create(FALSE);
 		$this->onConnect[] = function (DoctrineConnectionMock $connection) use ($container) {
 			if ($this->__testbench_databaseName !== NULL) { //already initialized (needed for pgsql)
@@ -167,5 +167,4 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 		);
 		$connection->connect();
 	}
-
 }
