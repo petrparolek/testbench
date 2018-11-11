@@ -86,7 +86,9 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 				$config = $container->getByType(\Nextras\Migrations\IConfiguration::class);
 				$finder = new \Nextras\Migrations\Engine\Finder();
 				$extensions = [1 => 'sql'];
+
 				$migrations = $finder->find($config->getGroups(), $extensions);
+				usort($migrations, array($this, "compareMigrationNames"));
 
 				foreach ($migrations as $migration) {
 					\Kdyby\Doctrine\Dbal\BatchImport\Helpers::loadFromFile($connection, $migration->path);
@@ -99,6 +101,11 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 				$this->__testbench_database_drop($connection, $container);
 			});
 		}
+	}
+
+	public function compareMigrationNames($a, $b)
+	{
+		return strcmp($a->name, $b->name);
 	}
 
 	/**
