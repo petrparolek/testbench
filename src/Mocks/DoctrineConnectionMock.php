@@ -82,17 +82,13 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 				$migrationsConfig->registerMigrationsFromDirectory($migrationsConfig->getMigrationsDirectory());
 				$migration = new \Doctrine\DBAL\Migrations\Migration($migrationsConfig);
 				$migration->migrate($migrationsConfig->getLatestVersion());
-			} else if (interface_exists(\Nextras\Migrations\IConfiguration::class)) {
+			} elseif (interface_exists(\Nextras\Migrations\IConfiguration::class)) {
 				$config = $container->getByType(\Nextras\Migrations\IConfiguration::class);
-				$finder = new \Nextras\Migrations\Engine\Finder();
-				$extensions = [1 => 'sql'];
-
-				$migrations = $finder->find($config->getGroups(), $extensions);
-				usort($migrations, array($this, "compareMigrationNames"));
-
-				foreach ($migrations as $migration) {
-					\Kdyby\Doctrine\Dbal\BatchImport\Helpers::loadFromFile($connection, $migration->path);
-				}
+				$driver = $container->getByType(\Nextras\Migrations\IDriver::class);
+				$printer = new \Nextras\Migrations\Printers\Console();
+				/** @var \Nextras\Migrations\Engine\Runner $runner */
+				$runner = new \Nextras\Migrations\Engine\Runner($driver, $printer);
+				$runner->run(\Nextras\Migrations\Engine\Runner::MODE_CONTINUE, $config);
 			}
 		}
 
