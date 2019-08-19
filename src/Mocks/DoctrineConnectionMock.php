@@ -85,7 +85,7 @@ class DoctrineConnectionMock extends \Kdyby\Doctrine\Connection implements \Test
 			} elseif (interface_exists(\Nextras\Migrations\IConfiguration::class)) {
 				$config = $container->getByType(\Nextras\Migrations\IConfiguration::class);
 				$driver = $container->getByType(\Nextras\Migrations\IDriver::class);
-				$printer = new \Nextras\Migrations\Printers\Console();
+				$printer = new ConsoleMock();
 				/** @var \Nextras\Migrations\Engine\Runner $runner */
 				$runner = new \Nextras\Migrations\Engine\Runner($driver, $printer);
 				$runner->run(\Nextras\Migrations\Engine\Runner::MODE_CONTINUE, $config);
